@@ -180,7 +180,7 @@ while run:
     player.draw(win)
     game.draw(win)
     ### End Draw   ###
-    print()
+    print("Working")
     pygame.display.flip()
     clock.tick(60)
 pygame.quit()
