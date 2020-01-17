@@ -41,6 +41,7 @@ def ds(p1, p2):
 
 class Player:
     def __init__(self, x, y, width, height, image):
+        #Is this being pushed properly???
         self.x = x
         self.y = y
         self.width = width
