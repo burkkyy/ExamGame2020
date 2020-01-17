@@ -18,11 +18,15 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+
 # Game info vars ###
 game_width = 2000
 game_height = 2000
-number_of_stars = 1000
+number_of_stars = 2000
 number_of_enemies = 10
+enemy_health = 2
+bullet_speed = 5
+
 
 # Pictures ###
 player_img = pygame.image.load("//2260M01/users/student/BurkCale489/ExamGame2020/Pictures/player_space_ship.png")
@@ -35,13 +39,26 @@ enemy_boss_img = pygame.image.load("//2260M01/users/student/BurkCale489/ExamGame
 enemy_boss_img = pygame.transform.scale(enemy_boss_img, (100, 40))
 
 
+# Math formulas
 def ds(p1, p2):
     return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
 
+def findrise(y1, y2):
+    return y2 - y1
+
+
+def findrun(x1, x2):
+    return x2 - x1
+
+
+def normalize(origin, mouse_pos):
+    dis = ds(origin, mouse_pos)
+    return findrise(origin[0], mouse_pos[0]) / dis, findrun(origin[1], mouse_pos[1]) / dis
+
+
 class Player:
     def __init__(self, x, y, width, height, image):
-        #Is this being pushed properly???
         self.x = x
         self.y = y
         self.width = width
@@ -52,8 +69,8 @@ class Player:
         self.image_rect = self.original_image.get_rect(center=win_rect.center)
         self.angle = 0
 
-    def draw(self, win):
-        win.blit(self.image, self.image_rect)
+    def draw(self, window):
+        window.blit(self.image, self.image_rect)
         pos = pygame.mouse.get_pos()
         self.angle = 360 - 90 - math.atan2(pos[1] - size[1]/2, pos[0] - size[0]/2)*180/math.pi
         self.rotate()
@@ -74,6 +91,7 @@ class GameBoard:
 
         # Player rect
         self.player_rect = player_rect
+        self.player_center = [int(player_rect[0] + player_rect[2]/2), int(player_rect[1] + player_rect[3]/2)]
         self.player_life = 10
         print(self.player_life)
 
@@ -99,6 +117,7 @@ class GameBoard:
 
         # Enemies
         self.enemy_list = []
+        self.enemy_health_list = []
         self.enemy_vel_x_list = []
         self.enemy_vel_y_list = []
         for i in range(number_of_enemies):
@@ -107,34 +126,17 @@ class GameBoard:
             self.enemy_list.append(pygame.Rect(x, y, enemy_img.get_rect()[2], enemy_img.get_rect()[3]))
             self.enemy_vel_x_list.append(random.randrange(-5, 5))
             self.enemy_vel_y_list.append(random.randrange(-5, 5))
+            self.enemy_health_list.append(enemy_health)
 
         # Bullet
-        '''
-        class Bullet:
-            def __init__(self, pos, width, height, angle):
-                self.x = pos[0]
-                self.y = pos[1]
-                self.width = width
-                self.height = height
-                self.rect = pygame.Rect(x, y, width, height)
-                self.original_image = "Bullet_img.png"
-                self.image = self.original_image.copy()
-                self.image_rect = self.original_image.get_rect(center=win_rect.center)
-                self.rotate(angle)
-
-            def rotate(self, angle):
-                self.image = pygame.transform.rotate(self.original_image, angle)
-                self.image_rect = self.image.get_rect(center=self.image_rect.center)
-
-        b = Bullet()
-        print(b.x)
-        '''
+        self.bullets = []
 
         # All non-player objects to do base move
         self.move_objects = [
             self.border,
             self.star_list,
             self.enemy_list,
+            self.bullets,
         ]
 
     def draw(self, window):
@@ -144,11 +146,11 @@ class GameBoard:
             pygame.draw.circle(window, WHITE, (star[0], star[1]), star[2])
         for enemy in self.enemy_list:
             window.blit(enemy_img, (enemy[0], enemy[1]))
+        for bullet in self.bullets:
+            pygame.draw.circle(window, RED, (int(bullet[0]), int(bullet[1])), 5)
 
         if self.player_life <= 0:
             print("You lost")
-            pygame.quit()
-            quit()
 
         self.move()
 
@@ -188,6 +190,32 @@ class GameBoard:
                 if collide_index == 3:
                     self.enemy_vel_x_list[i] *= -1
 
+        # Bullets
+        for bullet in self.bullets:
+            bullet[0] += bullet[2]*50
+            bullet[1] += bullet[3]*50
+
+            for i in range(len(self.enemy_list)):
+                for bullet in self.bullets:
+                    if self.enemy_list[i].collidepoint((bullet[0], bullet[1])):
+                        self.enemy_health_list[i] -= 1
+                        self.bullets.remove(bullet)
+
+                if self.enemy_health_list[i] <= 0:
+                    print("Nice kill")
+                    self.enemy_health_list[i] = enemy_health
+                    self.enemy_list[i][0] = random.randrange(
+                        self.top_rect[0] + 5, self.right_rect[0] - enemy_img.get_rect()[2] - 5
+                    )
+                    self.enemy_list[i][1] = random.randrange(
+                        self.top_rect[1] + self.border_size + 5,
+                        self.bottom_rect[1] - enemy_img.get_rect()[3] - 5,
+                    )
+
+            for i in range(len(self.border)):
+                if self.border[i].collidepoint((bullet[0], bullet[1])):
+                    self.bullets.remove(bullet)
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             if not self.top_rect.move(0, self.up_vel).colliderect(self.player_rect):
@@ -210,6 +238,12 @@ class GameBoard:
                     for k in range(len(self.move_objects[i])):
                         self.move_objects[i][k][0] += self.right_vel
 
+    def shoot(self):
+        rise, run = normalize(self.player_center, pygame.mouse.get_pos())
+        self.bullets.append(
+            [self.player_center[0], self.player_center[1], rise, run]
+        )
+
 # Defining vars ###
 o = (size[0] / 2, size[1] / 2)  # Center of screen
 player = Player(
@@ -231,6 +265,10 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                game.shoot()
+
     win.fill(BLACK)
     # Draw Stuff ###
     player.draw(win)
