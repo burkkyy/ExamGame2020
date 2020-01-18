@@ -23,7 +23,7 @@ game_width = 2000
 game_height = 2000
 number_of_stars = 2000
 number_of_enemies = 10
-enemy_health = 2
+enemy_health = 5
 bullet_speed = 5
 
 # Pictures ###
@@ -68,22 +68,6 @@ def findrun(x1, x2):
 def normalize(origin, mouse_pos):
     dis = ds(origin, mouse_pos)
     return findrise(origin[0], mouse_pos[0]) / dis, findrun(origin[1], mouse_pos[1]) / dis
-
-
-class Explosion_Animate:
-    def __init__(self, x, y):
-        self.pos = (x, y)
-        self.explosion_count = 0
-        self.explosion_timer = 0
-
-    def draw(self, window):
-        self.explosion_timer += 1
-        if self.explosion_timer >= 5:
-            self.explosion_timer = 0
-            self.explosion_count += 1
-            if self.explosion_count >= 11:
-                return False
-        window.blit(Explosion[self.explosion_count], self.pos)
 
 
 class Player:
@@ -160,34 +144,47 @@ class GameBoard:
         # Bullet
         self.bullets = []
 
+        # Explosions list
+        self.explosions = []  # x, y, timer, count
+
         # All non-player objects to do base move
         self.move_objects = [
             self.border,
             self.star_list,
             self.enemy_list,
             self.bullets,
+            self.explosions,
         ]
 
     def draw(self, window):
         for border in self.border:
             pygame.draw.rect(window, RED, border)
+
         for star in self.star_list:
             pygame.draw.circle(window, WHITE, (star[0], star[1]), star[2])
+
         for enemy in self.enemy_list:
             window.blit(enemy_img, (enemy[0], enemy[1]))
+
         for bullet in self.bullets:
             pygame.draw.circle(window, RED, (int(bullet[0]), int(bullet[1])), 5)
 
-        if self.player_life <= 0:
-            print("You lost")
+        for explosion in self.explosions:
+            explosion[2] += 1
+            if explosion[2] >= 5:
+                explosion[2] = 0
+                explosion[3] += 1
+                if explosion[3] >= 11:
+                    self.explosions.remove(explosion)
+            window.blit(Explosion[explosion[3]], (explosion[0], explosion[1]))
 
-        print(self.bullets)
         self.move()
 
     def move(self):
         # Enemy collision ###
         for i in range(len(self.enemy_list)):
             if self.enemy_list[i].move(self.enemy_vel_x_list[i], self.enemy_vel_y_list[i]).colliderect(self.player_rect):
+                self.explosions.append([self.enemy_list[i][0], self.enemy_list[i][1], 0, 0])
                 self.player_life -= 1
                 self.enemy_list[i][0] = random.randrange(
                     self.top_rect[0] + 5, self.right_rect[0] - enemy_img.get_rect()[2] - 5
@@ -232,7 +229,7 @@ class GameBoard:
                         self.bullets.remove(bullet)
 
                 if self.enemy_health_list[i] <= 0:
-                    print("Nice kill")
+                    self.explosions.append([self.enemy_list[i][0], self.enemy_list[i][1], 0, 0])
                     self.enemy_health_list[i] = enemy_health
                     self.enemy_list[i][0] = random.randrange(
                         self.top_rect[0] + 5, self.right_rect[0] - enemy_img.get_rect()[2] - 5
