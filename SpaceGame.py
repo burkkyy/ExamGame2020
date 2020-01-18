@@ -18,7 +18,6 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-
 # Game info vars ###
 game_width = 2000
 game_height = 2000
@@ -27,16 +26,30 @@ number_of_enemies = 10
 enemy_health = 2
 bullet_speed = 5
 
-
 # Pictures ###
-player_img = pygame.image.load("//2260M01/users/student/BurkCale489/ExamGame2020/Pictures/player_space_ship.png")
+player_img = pygame.image.load("player_space_ship.png")
 player_img = pygame.transform.scale(player_img, (50, 50))
 
-enemy_img = pygame.image.load("//2260M01/users/student/BurkCale489/ExamGame2020/Pictures/enemy_space_ship.png")
+enemy_img = pygame.image.load("enemy_space_ship.png")
 enemy_img = pygame.transform.scale(enemy_img, (120, 60))
 
-enemy_boss_img = pygame.image.load("//2260M01/users/student/BurkCale489/ExamGame2020/Pictures/enemy_boss_space_ship.png")
+enemy_boss_img = pygame.image.load("enemy_boss_space_ship.png")
 enemy_boss_img = pygame.transform.scale(enemy_boss_img, (100, 40))
+
+Explosion = [
+    pygame.image.load("Explosion1.png"),
+    pygame.image.load("Explosion2.png"),
+    pygame.image.load("Explosion3.png"),
+    pygame.image.load("Explosion4.png"),
+    pygame.image.load("Explosion5.png"),
+    pygame.image.load("Explosion6.png"),
+    pygame.image.load("Explosion7.png"),
+    pygame.image.load("Explosion8.png"),
+    pygame.image.load("Explosion9.png"),
+    pygame.image.load("Explosion10.png"),
+    pygame.image.load("Explosion11.png"),
+    pygame.image.load("Explosion12.png"),
+]
 
 
 # Math formulas
@@ -55,6 +68,22 @@ def findrun(x1, x2):
 def normalize(origin, mouse_pos):
     dis = ds(origin, mouse_pos)
     return findrise(origin[0], mouse_pos[0]) / dis, findrun(origin[1], mouse_pos[1]) / dis
+
+
+class Explosion_Animate:
+    def __init__(self, x, y):
+        self.pos = (x, y)
+        self.explosion_count = 0
+        self.explosion_timer = 0
+
+    def draw(self, window):
+        self.explosion_timer += 1
+        if self.explosion_timer >= 5:
+            self.explosion_timer = 0
+            self.explosion_count += 1
+            if self.explosion_count >= 11:
+                return False
+        window.blit(Explosion[self.explosion_count], self.pos)
 
 
 class Player:
@@ -152,6 +181,7 @@ class GameBoard:
         if self.player_life <= 0:
             print("You lost")
 
+        print(self.bullets)
         self.move()
 
     def move(self):
@@ -243,6 +273,7 @@ class GameBoard:
         self.bullets.append(
             [self.player_center[0], self.player_center[1], rise, run]
         )
+
 
 # Defining vars ###
 o = (size[0] / 2, size[1] / 2)  # Center of screen
