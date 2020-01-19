@@ -23,7 +23,8 @@ game_width = 2000
 game_height = 2000
 number_of_stars = 2000
 number_of_enemies = 10
-enemy_health = 5
+enemy_health = 1
+player_life = 10
 bullet_speed = 5
 
 # Pictures ###
@@ -105,8 +106,10 @@ class GameBoard:
         # Player rect
         self.player_rect = player_rect
         self.player_center = [int(player_rect[0] + player_rect[2]/2), int(player_rect[1] + player_rect[3]/2)]
-        self.player_life = 10
-        print(self.player_life)
+        self.player_life = player_life
+        self.health_bar = (3, size[1] - 13, self.player_life*10, 10)
+        self.anti_health_bar = (3 + self.player_life * 10, size[0], 1, 10)
+        self.score = 0
 
         # Border rectangles ###
         self.top_rect = pygame.Rect(r[0] - r[2] / 2, r[1] - r[3] / 2 - s, r[2] + s, s)
@@ -178,6 +181,17 @@ class GameBoard:
                     self.explosions.remove(explosion)
             window.blit(Explosion[explosion[3]], (explosion[0], explosion[1]))
 
+        # Health bar draw
+        self.health_bar = (3, size[1] - 13, self.player_life * 10, 10)
+        self.anti_health_bar = (3 + self.player_life*10, size[1] - 13, player_life*10 - self.player_life*10, 10)
+        pygame.draw.rect(window, GREEN, self.health_bar)
+        pygame.draw.rect(window, RED, self.anti_health_bar)
+
+        # Score board draw
+        font1 = pygame.font.Font("freesansbold.ttf", 16)
+        text1 = font1.render(str("Score: " + str(self.score)), True, RED, BLACK)
+        win.blit(text1, (3, 450))
+
         self.move()
 
     def move(self):
@@ -229,6 +243,7 @@ class GameBoard:
                         self.bullets.remove(bullet)
 
                 if self.enemy_health_list[i] <= 0:
+                    self.score += 1
                     self.explosions.append([self.enemy_list[i][0], self.enemy_list[i][1], 0, 0])
                     self.enemy_health_list[i] = enemy_health
                     self.enemy_list[i][0] = random.randrange(
@@ -299,8 +314,13 @@ while run:
 
     win.fill(BLACK)
     # Draw Stuff ###
-    player.draw(win)
-    game.draw(win)
+    if game.player_life <= 0:
+        font = pygame.font.Font("freesansbold.ttf", 32)
+        text = font.render("YOU DIED, GAME OVER", True, RED, BLACK)
+        win.blit(text, (size[0] / 2 - 200, size[1] / 2))
+    else:
+        player.draw(win)
+        game.draw(win)
     pygame.display.flip()
     clock.tick(60)
 pygame.quit()
