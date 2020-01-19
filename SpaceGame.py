@@ -23,7 +23,7 @@ game_width = 2000
 game_height = 2000
 number_of_stars = 2000
 number_of_enemies = 10
-enemy_health = 1
+enemy_health = 5
 player_life = 10
 bullet_speed = 5
 
