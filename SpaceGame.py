@@ -18,12 +18,13 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+
 # Game info vars ###
 game_width = 2000
 game_height = 2000
 number_of_stars = 2000
 number_of_enemies = 10
-enemy_health = 5
+enemy_health = 3
 player_life = 10
 bullet_speed = 5
 
@@ -218,8 +219,11 @@ class GameBoard:
                 self.enemy_vel_y_list[i],
             ).collidelist(self.border)
             if collide_index == -1:
-                self.enemy_list[i][0] += self.enemy_vel_x_list[i]
-                self.enemy_list[i][1] += self.enemy_vel_y_list[i]
+                self.enemy_vel_x_list[i], self.enemy_vel_y_list[i] = normalize(
+                    (self.enemy_list[i][0], self.enemy_list[i][1]), self.player_center
+                )
+                self.enemy_list[i][0] += self.enemy_vel_x_list[i]*4
+                self.enemy_list[i][1] += self.enemy_vel_y_list[i]*4
 
             else:
                 if collide_index == 0:
