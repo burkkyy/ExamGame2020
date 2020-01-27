@@ -29,6 +29,7 @@ number_of_stars = 500
 number_of_enemies = 6
 enemy_health = 2
 enemy_speed_multi = 4
+enemy_boss_Speed = 4
 player_life = 20
 bullet_speed = 5
 # </editor-fold>
@@ -42,6 +43,9 @@ enemy_img = pygame.transform.scale(enemy_img, (120, 60))
 
 enemy_boss_img = pygame.image.load("enemy_boss_space_ship.png")
 enemy_boss_img = pygame.transform.scale(enemy_boss_img, (100, 40))
+
+bomb_img = pygame.image.load("bomb_png.png")
+bomb_img = pygame.transform.scale(bomb_img, (50, 50))
 
 Explosion = [
     pygame.image.load("Explosion1.png"),
@@ -214,6 +218,9 @@ class GameBoard:
             self.enemy_bounce_health_list.append(enemy_health)
 
         self.enemy_boss_list = []
+        self.enemy_boss_speed_list = []
+        self.bomb_list = []
+        self.boss_timer = 0
         self.boss_score = 0
         # </editor-fold>
 
@@ -225,6 +232,7 @@ class GameBoard:
             self.enemy_list,
             self.enemy_bounce_list,
             self.enemy_boss_list,
+            self.bomb_list,
             self.bullets,
             self.explosions,
         ]  # All non-player objects to do base move
@@ -242,6 +250,12 @@ class GameBoard:
 
         for enemy_bounce in self.enemy_bounce_list:
             window.blit(enemy_img, (enemy_bounce[0], enemy_bounce[1]))
+
+        for enemy_boss in self.enemy_boss_list:
+            window.blit(enemy_boss_img, (enemy_boss[0], enemy_boss[1]))
+
+        for bomb in self.bomb_list:
+            window.blit(bomb_img, (bomb[0], bomb[1]))
 
         for bullet in self.bullets:
             pygame.draw.circle(window, RED, (int(bullet[0]), int(bullet[1])), 5)
@@ -269,10 +283,28 @@ class GameBoard:
         win.blit(text1, (3, 450))
         # </editor-fold>
 
-        # Check if boss should spawn
+        # <editor-fold desc="Check if boss should spawn">
+        self.boss_timer += 1
+        if self.boss_timer >= 60:
+            self.boss_timer = 0
+            for enemy in self.enemy_boss_list:
+                self.bomb_list.append(
+                    pygame.Rect(enemy[0], enemy[1], bomb_img.get_rect()[2], bomb_img.get_rect()[3])
+                )
+
         if self.boss_score // 10:
             self.boss_score = 0
+            self.enemy_boss_speed_list.append(enemy_boss_Speed)
+            self.enemy_boss_list.append(
+                pygame.Rect(
+                    self.top_rect_pos[0],
+                    self.top_rect_pos[1] + 20,
+                    enemy_boss_img.get_rect()[2],
+                    enemy_boss_img.get_rect()[3],
+                )
+            )
             print("Spawn new boss")
+        # </editor-fold>
 
         # Update self.top_rect_pos and move objects
         self.top_rect_pos = (self.top_rect[0] + self.border_size, self.top_rect[1] + self.border_size)
@@ -361,6 +393,24 @@ class GameBoard:
                     self.enemy_bounce_vel_y_list[i] *= -1
                 if collide_index == 3:
                     self.enemy_bounce_vel_x_list[i] *= -1
+        # </editor-fold>
+
+        # <editor-fold desc="Enemy boss">
+        for i in range(len(self.enemy_boss_list)):
+            self.enemy_boss_list[i][0] += self.enemy_boss_speed_list[i]
+            if self.enemy_boss_list[i].collidelist(self.border) != -1:
+                self.enemy_boss_speed_list[i] *= -1
+        # </editor-fold>
+
+        # <editor-fold desc="bomb">
+        for i in range(len(self.bomb_list)):
+            self.bomb_list[i][1] += 3
+            if self.bomb_list[i].collidelist(self.border) == 2:
+                self.bomb_list.remove(self.bomb_list[i])
+                break
+
+            if self.bomb_list[i].colliderect(self.player_rect):
+                self.player_life = 0
         # </editor-fold>
 
         # <editor-fold desc="Bullets">
